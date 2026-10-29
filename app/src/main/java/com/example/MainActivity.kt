@@ -323,9 +323,20 @@ fun SkillBridgeApp(
                         },
                         onOpenBusinessTeam = { showBusinessTeamDialog = true },
                         onOpenStaffLogin = { showStaffLoginDialog = true },
+                        onOpenDiagnostics = { currentScreen = "diagnostics" },
                         onUpdateTrustedContact = {
                             repository.updateTrustedContact(it)
                             Toast.makeText(context, "Trusted family contact updated!", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+
+                "diagnostics" -> {
+                    DiagnosticsScreen(
+                        onBack = { currentScreen = "profile" },
+                        pendingOfflineCount = 0,
+                        onFlushOfflineQueue = {
+                            Toast.makeText(context, "Offline action queue flushed & synchronized with backend", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

@@ -53,10 +53,11 @@ JWT_SECRET=4c9a7218d6e3f5b081a293c4d7e8f1a0b3c5d7e9f2a4b6c8d0e2f4a6b8c0d2e4
 JWT_ACCESS_EXPIRATION_MS=900000        # 15 minutes
 JWT_REFRESH_EXPIRATION_MS=604800000    # 7 days
 
-# GST Compliance Configuration (Phase 3 Test Mode)
-GST_GSTIN=27AABCS1423Q1ZP             # Config placeholder - pending registration
-GST_SAC_CODE=998713                    # Service Accounting Code (Placement / Supply Services)
+# GST Compliance Configuration (Explicit pilot placeholders; invoice generation blocked in production)
+GST_GSTIN=GSTIN-NOT-CONFIGURED-PILOT-ONLY
+GST_SAC_CODE=SAC-NOT-CONFIGURED
 GST_LEGAL_ENTITY_NAME=SkillBridge Technologies India Pvt Ltd
+APP_IS_PRODUCTION=false
 
 # Payment Gateway (Razorpay TEST Mode)
 RAZORPAY_KEY_ID=rzp_test_placeholder_key
@@ -186,14 +187,64 @@ Ensure all 33 tasks execute successfully and 100% of unit tests pass.
 
 ---
 
-## 7. Disaster Recovery & Incident Management
+## 7. Disaster Recovery & Incident Playbooks (Phase 5)
 
-1. **Redis Cache Crash / Failure:**
-   - The Spring Boot dispatch service automatically falls back to direct database lock records (`SELECT ... FOR UPDATE`) if the Redis connection fails.
-2. **Payment Gateway Outage:**
-   - Razorpay webhook failures trigger automated reconciliation jobs running every 15 minutes.
-   - Escrow remains locked until cryptographic signature confirmation is obtained.
-3. **Emergency Hotline SOS Alert:**
-   - On receiving an SOS alert, support agents are alerted on the ops dashboard, and an automated SMS dispatch is sent to the worker's emergency contact with current GPS coordinates.
-4. **Data Erasure (DPDP Act 2023):**
-   - User requests through the Data Erasure Dialog are processed by scrubbing personal identifiers (name, phone, avatar) and replacing KYC records with anonymized hashes while maintaining double-entry ledger integrity for tax auditing.
+### Playbook 1: Database Connection Pool Exhaustion (HikariCP)
+- **Symptom:** API requests time out with `SQLTransientConnectionException: HikariPool-1 - Connection is not available`.
+- **Immediate Triage:**
+  ```bash
+  # Check active Postgres connections
+  docker exec -it skillbridge-postgres psql -U skillbridge_user -d skillbridge_db -c "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
+  # Kill idle in transaction connections older than 2 minutes
+  docker exec -it skillbridge-postgres psql -U skillbridge_user -d skillbridge_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle in transaction' AND state_change < current_timestamp - INTERVAL '2 minutes';"
+  ```
+- **Resolution:** If load sustained, temporarily increase `hikari.maximum-pool-size` in `application.yml` from 20 to 35 and restart backend.
+
+### Playbook 2: Redis Memory Threshold Crossed (> 80%)
+- **Symptom:** Prometheus alert `redis_memory_usage_ratio > 0.8`.
+- **Immediate Triage:**
+  ```bash
+  # Inspect memory consumption
+  docker exec -it skillbridge-redis redis-cli -a "${REDIS_PASSWORD}" info memory
+  # Evict expired dispatch locks and telemetry keys
+  docker exec -it skillbridge-redis redis-cli -a "${REDIS_PASSWORD}" --scan --pattern "dispatch:lock:*" | xargs -r docker exec -i skillbridge-redis redis-cli -a "${REDIS_PASSWORD}" del
+  ```
+
+### Playbook 3: Google Maps Platform Quota Alert / Kill Switch Activation
+- **Symptom:** Alert `GoogleMapsQuotaExhaustion` (80% daily quota reached) or automatic kill switch activated (100% quota).
+- **Behavior:** The backend automatically falls back to Euclidean straight-line distance calculation (`GoogleRoutesService.java`). Maps Compose UI displays yellow indicator banner and opens external navigation app.
+- **Resolution:**
+  1. Inspect Google Cloud Console billing/quotas for Routes API.
+  2. Increase daily ceiling in Google Cloud Console if pilot volume expanded.
+  3. Reset tracker: `POST /v1/admin/maps/reset-usage`.
+
+### Playbook 4: Razorpay Webhook Delivery Backlog
+- **Symptom:** Escrow balances delayed in `HELD` status; customer charged but job not transitioning.
+- **Immediate Triage:**
+  1. Verify webhook secret signature matching in `.env.backend`.
+  2. Query missed payments:
+     ```bash
+     curl -H "Authorization: Bearer ${STAFF_JWT}" https://api.skillbridge.in/v1/admin/payments/reconcile-pending
+     ```
+  3. Trigger automated idempotent sync: jobs transition to `MATCHED` without duplicate ledger postings.
+
+### Playbook 5: SOS Safety Alert & Worker Emergency Triage
+- **Symptom:** Worker or task-poster triggers in-app SOS during active job.
+- **Immediate Triage:**
+  1. Alert appears immediately on Staff Operations Console with live GPS coordinates.
+  2. Automated webhook dispatches SMS with Google Maps location pin to the user's `trustedContactPhone`.
+  3. Ops manager dials virtual bridge line to verify safety.
+
+---
+
+## 8. Pilot Service Level Objectives (SLOs) & Alert Rules
+
+| Metric | Pilot Target (Nagpur) | Warning Threshold | Critical Alert (Pager) |
+|---|---|---|---|
+| **API Availability** | >= 99.5% | < 99.5% (5m window) | < 99.0% (immediate) |
+| **API Latency (p95)** | < 250ms | > 350ms | > 600ms |
+| **API Latency (p99)** | < 500ms | > 750ms | > 1200ms |
+| **Dispatch Match Rate** | >= 85% within 60s | < 75% | < 60% (supply crunch) |
+| **SSE Stream Stability** | < 0.5% disconnects | > 1.0% | > 3.0% (proxy buffer error) |
+| **Escrow Ledger Inbalance** | Exactly 0 paise | > 0 paise | > 0 paise (immediate freeze) |
+

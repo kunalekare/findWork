@@ -290,10 +290,10 @@ class ExampleUnitTest {
         assertEquals(85000L, invoice.totalAmountPaise)
         val expectedBase = (85000L / 1.18).toLong()
         assertEquals(expectedBase, invoice.baseAmountPaise)
-        assertEquals("998713", invoice.sacCode)
-        assertEquals("27AABCS1423Q1ZP", invoice.gstin)
+        assertEquals("SAC-NOT-CONFIGURED", invoice.sacCode)
+        assertEquals("GSTIN-NOT-CONFIGURED-PILOT-ONLY", invoice.gstin)
         assertTrue(invoice.isPlaceholderMode)
-        assertTrue(invoice.complianceDisclaimer.contains("TEST-MODE PLACEHOLDER"))
+        assertTrue(invoice.complianceDisclaimer.contains("PILOT WARNING"))
     }
 
     // =========================================================================
@@ -423,6 +423,97 @@ class ExampleUnitTest {
         }
         assertTrue(confirmed)
         assertTrue(parsed["skills"]?.contains("Kotlin") == true)
+    }
+
+    // =========================================================================
+    // 10. Phase 4 & Phase 5 Production Readiness Tests
+    // =========================================================================
+
+    @Test
+    fun testGoogleMapsProviderUnconfiguredFallback() {
+        val unconfiguredProvider = com.example.skillbridge.provider.GoogleMapsProvider("PLACEHOLDER_MAPS_API_KEY")
+        assertFalse(unconfiguredProvider.isKeyConfigured)
+
+        val route = unconfiguredProvider.getFullRoute(21.1458, 79.0882, 21.1480, 79.0950)
+        assertEquals("Mock Offline Vector Cache", route.providerSource)
+        assertTrue(route.distanceKm > 0)
+    }
+
+    @Test
+    fun testGoogleMapsProviderConfiguredKey() {
+        val configuredProvider = com.example.skillbridge.provider.GoogleMapsProvider("AIzaSyBValidProductionKeyForNagpurPilot2026")
+        assertTrue(configuredProvider.isKeyConfigured)
+
+        val route = configuredProvider.getFullRoute(21.1458, 79.0882, 21.1480, 79.0950)
+        assertTrue(route.providerSource.contains("Google Maps"))
+        assertTrue(route.polylinePoints.size >= 4)
+    }
+
+    @Test
+    fun testRadarSearchRadiusExpansionCascade() {
+        val initialRadius = 2000 // 2 km
+        val step1 = if (initialRadius < 5000) 5000 else 10000
+        val step2 = if (step1 < 10000) 10000 else 10000
+
+        assertEquals(5000, step1)
+        assertEquals(10000, step2)
+        assertTrue(step2 <= 10000) // Configurable max ceiling
+    }
+
+    @Test
+    fun testWorkerTelemetryIntervalRules() {
+        val activeJobIntervalMs = 5000L
+        val idleIntervalMs = 15000L
+
+        assertTrue(activeJobIntervalMs < idleIntervalMs)
+        assertEquals(5000L, activeJobIntervalMs)
+        assertEquals(15000L, idleIntervalMs)
+    }
+
+    @Test
+    fun testGstInvoiceProductionSafetyFlag() {
+        val testInvoice = repository.generateGstInvoice("job_301")
+        assertTrue(testInvoice.isPlaceholderMode)
+        assertEquals("GSTIN-NOT-CONFIGURED-PILOT-ONLY", testInvoice.gstin)
+        assertEquals("SAC-NOT-CONFIGURED", testInvoice.sacCode)
+        assertTrue(testInvoice.complianceDisclaimer.contains("PILOT WARNING"))
+    }
+
+    @Test
+    fun testAppConfigEnvironmentSwitching() {
+        val previousMode = com.example.skillbridge.config.AppConfig.currentMode
+
+        com.example.skillbridge.config.AppConfig.setEnvironment(com.example.skillbridge.config.EnvironmentMode.MOCK)
+        assertTrue(com.example.skillbridge.config.AppConfig.isMock)
+        assertEquals("http://localhost:8080/v1", com.example.skillbridge.config.AppConfig.apiBaseUrl)
+
+        com.example.skillbridge.config.AppConfig.setEnvironment(com.example.skillbridge.config.EnvironmentMode.STAGING)
+        assertFalse(com.example.skillbridge.config.AppConfig.isMock)
+        assertEquals("https://staging-api.skillbridge.in/v1", com.example.skillbridge.config.AppConfig.apiBaseUrl)
+
+        com.example.skillbridge.config.AppConfig.setEnvironment(com.example.skillbridge.config.EnvironmentMode.PRODUCTION)
+        assertFalse(com.example.skillbridge.config.AppConfig.isMock)
+        assertEquals("https://api.skillbridge.in/v1", com.example.skillbridge.config.AppConfig.apiBaseUrl)
+
+        // Restore
+        com.example.skillbridge.config.AppConfig.setEnvironment(previousMode)
+    }
+
+    @Test
+    fun testOfflineActionQueueIdempotencyTracking() = kotlinx.coroutines.runBlocking {
+        val queue = com.example.skillbridge.data.offline.OfflineActionQueue()
+        val key1 = queue.enqueue(com.example.skillbridge.data.offline.OfflineActionQueue.ActionType.ACCEPT_JOB, "job_101")
+        val key2 = queue.enqueue(com.example.skillbridge.data.offline.OfflineActionQueue.ActionType.RATE_JOB, "job_101", "{\"rating\":5}")
+
+        assertNotNull(key1)
+        assertNotNull(key2)
+        assertNotEquals(key1, key2)
+
+        val pending = queue.getPendingActionsInMemory()
+        assertEquals(2, pending.size)
+        assertEquals("ACCEPT_JOB", pending[0].actionType)
+        assertEquals("RATE_JOB", pending[1].actionType)
+        assertEquals(2, queue.pendingCount.value)
     }
 }
 

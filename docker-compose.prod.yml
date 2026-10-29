@@ -1,0 +1,130 @@
+# ==============================================================================
+# SkillBridge — Production Docker Compose (Nagpur Pilot Launch)
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  reverse-proxy:
+    image: caddy:2.7-alpine
+    container_name: skillbridge-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-api.skillbridge.in}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - skillbridge-prod-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: skillbridge/backend:1.0.0-pilot
+    container_name: skillbridge-backend
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8080
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-skillbridge_db}
+      - POSTGRES_USER=${POSTGRES_USER:-skillbridge_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      - GST_INVOICE_GSTIN=${GST_INVOICE_GSTIN:-GSTIN-NOT-CONFIGURED-PILOT-ONLY}
+      - GST_INVOICE_SAC_CODE=${GST_INVOICE_SAC_CODE:-SAC-NOT-CONFIGURED}
+      - APP_IS_PRODUCTION=true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 1536M
+        reservations:
+          cpus: '0.50'
+          memory: 512M
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skillbridge-prod-net
+
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: skillbridge-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-skillbridge_db}
+      POSTGRES_USER: ${POSTGRES_USER:-skillbridge_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command: >
+      postgres
+        -c max_connections=100
+        -c shared_buffers=256MB
+        -c effective_cache_size=768MB
+        -c maintenance_work_mem=64MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=8MB
+        -c default_statistics_target=100
+        -c random_page_cost=1.1
+        -c effective_io_concurrency=200
+        -c work_mem=2621kB
+    volumes:
+      - pg_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skillbridge_user} -d ${POSTGRES_DB:-skillbridge_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+    networks:
+      - skillbridge-prod-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: skillbridge-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-skillbridge_redis_secret_2026}"]
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-skillbridge_redis_secret_2026}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    networks:
+      - skillbridge-prod-net
+
+volumes:
+  pg_prod_data:
+  redis_prod_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  skillbridge-prod-net:
+    driver: bridge

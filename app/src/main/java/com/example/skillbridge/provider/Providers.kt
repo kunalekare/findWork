@@ -308,7 +308,7 @@ class GoogleMapsProvider(
     private val offlineFallback: MapsProvider = MockMapsProvider()
 ) : MapsProvider {
     val isKeyConfigured: Boolean
-        get() = apiKey.isNotBlank() && !apiKey.contains("Placeholder") && !apiKey.startsWith("YOUR_")
+        get() = apiKey.isNotBlank() && !apiKey.contains("placeholder", ignoreCase = true) && !apiKey.startsWith("YOUR_")
 
     override fun calculateRouteEta(originLat: Double, originLng: Double, destLat: Double, destLng: Double): Pair<Double, Int> {
         return if (isKeyConfigured) {

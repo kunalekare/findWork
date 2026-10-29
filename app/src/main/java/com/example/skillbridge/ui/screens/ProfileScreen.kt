@@ -1,33 +1,39 @@
 package com.example.skillbridge.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.skillbridge.model.*
 import com.example.skillbridge.ui.components.*
 import com.example.skillbridge.ui.theme.*
 
+private val ProfileCardShape = RoundedCornerShape(22.dp)
+private val ProfileTileShape = RoundedCornerShape(17.dp)
+
+/**
+ * SkillBridge Profile — redesigned as a polished account and professional dashboard.
+ * Uses the existing model and callback contract so navigation/business logic stays outside this UI.
+ */
 @Composable
 fun ProfileScreen(
     user: User,
@@ -44,575 +50,569 @@ fun ProfileScreen(
     onCompleteCourse: (String) -> Unit,
     onOpenBusinessTeam: () -> Unit,
     onOpenStaffLogin: () -> Unit,
+    onOpenDiagnostics: () -> Unit = {},
     onUpdateTrustedContact: (String) -> Unit
 ) {
-    val scrollState = rememberScrollState()
     var showShareQrDialog by remember { mutableStateOf(false) }
     var showEditContactDialog by remember { mutableStateOf(false) }
     var showHelpCenterDialog by remember { mutableStateOf(false) }
     var showReferralDialog by remember { mutableStateOf(false) }
     var showDataErasureDialog by remember { mutableStateOf(false) }
-    var contactInput by remember { mutableStateOf(user.trustedContactPhone) }
+    var contactInput by remember(user.trustedContactPhone) {
+        mutableStateOf(user.trustedContactPhone)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(SkillBridgeBg)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
 
-        // 1. SKILL PASSPORT HERO CARD
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(3.dp, RoundedCornerShape(16.dp))
-                .testTag("skill_passport_card"),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-            border = CardDefaults.outlinedCardBorder().copy(width = 1.5.dp, brush = androidx.compose.ui.graphics.SolidColor(SkillBridgePrimary))
+        // Screen heading
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = user.avatarEmoji, fontSize = 42.sp)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = user.name,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                if (user.isKycVerified) {
-                                    Icon(
-                                        imageVector = Icons.Default.Verified,
-                                        contentDescription = "Verified KYC",
-                                        tint = SkillBridgeSuccess,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                            Text(
-                                text = "Skill Passport #${user.id.uppercase()} • ${user.locationCity}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = SkillBridgeTextMuted
-                            )
-                        }
-                    }
-
-                    // Share QR Button
-                    IconButton(
-                        onClick = { showShareQrDialog = true },
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(SkillBridgePrimarySoft)
-                            .testTag("share_qr_button")
-                    ) {
-                        Icon(imageVector = Icons.Default.QrCode, contentDescription = "QR Code", tint = SkillBridgePrimaryHover)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = user.bio,
-                    style = MaterialTheme.typography.bodyMedium,
+                    "My profile",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
                     color = SkillBridgeText
                 )
+                Text(
+                    "Your identity, reputation and account settings",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SkillBridgeTextMuted
+                )
+            }
+            Surface(
+                shape = CircleShape,
+                color = SkillBridgeWhite,
+                border = BorderStroke(1.dp, SkillBridgeBorder),
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = "Profile settings",
+                        tint = SkillBridgeText
+                    )
+                }
+            }
+        }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Trust Score & Metrics Bar
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
+        // Profile / skill passport hero
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ProfileCardShape,
+            colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+            border = BorderStroke(1.dp, SkillBridgeBorder),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(92.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(SkillBridgePrimary, SkillBridgePrimaryHover)
+                            )
+                        )
                 ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceAround
+                            .align(Alignment.TopEnd)
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Trust Score", style = MaterialTheme.typography.labelSmall, color = SkillBridgeTextMuted)
-                            Text("${user.trustScore}%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SkillBridgeSuccess)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Rating", style = MaterialTheme.typography.labelSmall, color = SkillBridgeTextMuted)
-                            Text("⭐ ${user.rating}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Completed", style = MaterialTheme.typography.labelSmall, color = SkillBridgeTextMuted)
-                            Text("${user.jobsCompleted} Jobs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SkillBridgePrimaryHover)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Response", style = MaterialTheme.typography.labelSmall, color = SkillBridgeTextMuted)
-                            Text("${user.responseTimeMinutes}m", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        }
+                        Icon(
+                            Icons.Default.VerifiedUser,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.88f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            "SKILL PASSPORT",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Badges
-                Text(
-                    text = "Verified Skill Badges",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = SkillBridgeText
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    user.badges.forEach { badge ->
+                Column(Modifier.padding(horizontal = 17.dp).padding(bottom = 17.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(999.dp))
+                                .padding(top = 0.dp)
+                                .offset(y = (-27).dp)
+                                .size(76.dp)
+                                .clip(CircleShape)
                                 .background(SkillBridgePrimarySoft)
-                                .border(1.dp, SkillBridgeBorder, RoundedCornerShape(999.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .border(4.dp, SkillBridgeWhite, CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "🏅 $badge",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = SkillBridgePrimaryHover
+                            Text(user.avatarEmoji, fontSize = 39.sp)
+                        }
+                        Spacer(Modifier.width(11.dp))
+                        Column(
+                            modifier = Modifier.weight(1f).padding(top = 10.dp, bottom = 7.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    user.name,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = SkillBridgeText,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (user.isKycVerified) {
+                                    Spacer(Modifier.width(5.dp))
+                                    Icon(
+                                        Icons.Default.Verified,
+                                        contentDescription = "KYC verified",
+                                        tint = SkillBridgeSuccess,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = SkillBridgeTextMuted,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    user.locationCity,
+                                    fontSize = 12.sp,
+                                    color = SkillBridgeTextMuted
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { showShareQrDialog = true },
+                            modifier = Modifier
+                                .padding(bottom = 6.dp)
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(SkillBridgePrimarySoft)
+                        ) {
+                            Icon(
+                                Icons.Default.QrCode2,
+                                contentDescription = "Share skill passport QR",
+                                tint = SkillBridgePrimaryHover
                             )
+                        }
+                    }
+
+                    Text(
+                        user.bio.ifBlank { "Build your professional profile and let customers discover your skills." },
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp,
+                        color = SkillBridgeTextMuted
+                    )
+
+                    Spacer(Modifier.height(15.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ProfileMetric(
+                            modifier = Modifier.weight(1f),
+                            value = "${user.trustScore}%",
+                            label = "Trust score",
+                            icon = Icons.Default.Shield,
+                            valueColor = SkillBridgeSuccess
+                        )
+                        ProfileMetric(
+                            modifier = Modifier.weight(1f),
+                            value = "★ ${user.rating}",
+                            label = "Rating",
+                            icon = Icons.Default.Star,
+                            valueColor = SkillBridgePrimaryHover
+                        )
+                        ProfileMetric(
+                            modifier = Modifier.weight(1f),
+                            value = "${user.jobsCompleted}",
+                            label = "Jobs done",
+                            icon = Icons.Default.TaskAlt,
+                            valueColor = SkillBridgeText
+                        )
+                    }
+
+                    if (user.badges.isNotEmpty()) {
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            "VERIFIED SKILLS",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.8.sp,
+                            color = SkillBridgeTextMuted
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(7.dp)
+                        ) {
+                            user.badges.forEach { badge ->
+                                Surface(
+                                    shape = CircleShape,
+                                    color = SkillBridgePrimarySoft,
+                                    border = BorderStroke(1.dp, SkillBridgePrimary.copy(alpha = 0.14f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.WorkspacePremium,
+                                            contentDescription = null,
+                                            tint = SkillBridgePrimaryHover,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(
+                                            badge,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = SkillBridgePrimaryHover
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        // 2. WORKER PRO MEMBERSHIP (WS-6: 10% Platform Fee Tier)
+        // Pro membership
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
+            shape = ProfileCardShape,
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF20242C)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Row(
-                modifier = Modifier.padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth().padding(17.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(15.dp))
+                        .background(Color.White.copy(alpha = 0.10f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = Color(0xFFFFC66D), modifier = Modifier.size(26.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("SkillBridge Pro Tier", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("SkillBridge Pro", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         if (user.isProMember) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(SkillBridgeSuccess.copy(alpha = 0.12f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text("ACTIVE PRO", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = SkillBridgeSuccess)
+                            Spacer(Modifier.width(7.dp))
+                            Surface(shape = CircleShape, color = SkillBridgeSuccess.copy(alpha = 0.20f)) {
+                                Text("ACTIVE", modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp), fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF86EFAC))
                             }
                         }
                     }
                     Text(
-                        text = if (user.isProMember) "You enjoy 10% commission fee (5% discount) on all jobs." else "Upgrade to Pro: 10% commission fee + priority dispatch badge.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SkillBridgeTextMuted
+                        if (user.isProMember) "Your Pro benefits are active." else "Lower platform fees and priority dispatch.",
+                        fontSize = 11.sp,
+                        color = Color.White.copy(alpha = 0.72f),
+                        lineHeight = 16.sp
                     )
                 }
                 if (!user.isProMember) {
                     Button(
                         onClick = onUpgradePro,
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimary),
-                        shape = RoundedCornerShape(8.dp)
+                        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 10.dp)
                     ) {
-                        Text("Upgrade", fontSize = 11.sp, color = SkillBridgeWhite, fontWeight = FontWeight.Bold)
+                        Text("Upgrade", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        // 3. LOW DATA MODE & RESILIENCE (WS-7)
+        SectionHeading("Preferences", "Make SkillBridge work the way you do")
+
+        // Preferences grouped in a single settings surface
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
+            shape = ProfileCardShape,
+            colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+            border = BorderStroke(1.dp, SkillBridgeBorder)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Low-Data Mode (2G / Low Memory)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text("Disables animated radar and maps for 2-GB-RAM devices & slow connections.", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                }
-                Switch(
-                    checked = isLowDataMode,
-                    onCheckedChange = { onToggleLowDataMode(it) },
-                    colors = SwitchDefaults.colors(checkedTrackColor = SkillBridgePrimary)
+            Column {
+                SettingRow(
+                    icon = Icons.Default.DataSaverOn,
+                    title = "Low-data mode",
+                    subtitle = "Reduce map animations and data usage",
+                    trailing = {
+                        Switch(
+                            checked = isLowDataMode,
+                            onCheckedChange = onToggleLowDataMode,
+                            colors = SwitchDefaults.colors(checkedTrackColor = SkillBridgePrimary)
+                        )
+                    }
                 )
-            }
-        }
-
-        // 4. TRUSTED CONTACT LIVE LOCATION SHARING (WS-4)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Family Trusted Contact", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text("Live location is automatically shared during night & emergency dispatches: ${user.trustedContactPhone}", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                }
-                TextButton(onClick = { showEditContactDialog = true }) {
-                    Text("Edit", color = SkillBridgePrimaryHover, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        // 5. WORKER PORTFOLIO GALLERY (WS-6)
-        if (portfolioItems.isNotEmpty()) {
-            Text("Work Portfolio Gallery", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(portfolioItems) { item ->
-                    Card(
-                        modifier = Modifier.width(180.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-                    ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
-                            Text(item.emoji, fontSize = 28.sp)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(item.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
-                            Text(item.category, style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = SkillBridgeTextMuted)
+                ProfileDivider()
+                SettingRow(
+                    icon = Icons.Default.ContactPhone,
+                    title = "Trusted emergency contact",
+                    subtitle = user.trustedContactPhone.ifBlank { "Add a trusted phone number" },
+                    onClick = { showEditContactDialog = true }
+                )
+                ProfileDivider()
+                Column(Modifier.fillMaxWidth().padding(15.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SettingIcon(Icons.Default.Language)
+                        Spacer(Modifier.width(11.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("App language", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = SkillBridgeText)
+                            Text("Choose your preferred language", fontSize = 11.sp, color = SkillBridgeTextMuted)
                         }
                     }
-                }
-            }
-        }
-
-        // 6. BUSINESS ACCOUNTS & TEAM DELEGATION (WS-6)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onOpenBusinessTeam() },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(imageVector = Icons.Default.Business, contentDescription = null, tint = SkillBridgePrimary, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Business Account & Team Roles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text("Manage company billing, dispatchers, and finance admins.", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                }
-                Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = SkillBridgePrimaryHover)
-            }
-        }
-
-        // 7. THREE EQUAL ONBOARDING PATHS SWITCHER
-        Text(
-            text = "Onboarding Flow Simulator",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = onLaunchVoiceOnboarding,
-                modifier = Modifier.weight(1f).height(44.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimarySoft, contentColor = SkillBridgePrimaryHover)
-            ) {
-                Icon(imageVector = Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Voice", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onLaunchFormOnboarding,
-                modifier = Modifier.weight(1f).height(44.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimarySoft, contentColor = SkillBridgePrimaryHover)
-            ) {
-                Icon(imageVector = Icons.Default.Description, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Form", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onLaunchIvrOnboarding,
-                modifier = Modifier.weight(1f).height(44.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimarySoft, contentColor = SkillBridgePrimaryHover)
-            ) {
-                Icon(imageVector = Icons.Default.Dialpad, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("IVR", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        // 8. LANGUAGE SELECTOR
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Text(
-                    text = "App Language / भाषा / भाषा निवडा",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AppLanguage.values().forEach { lang ->
-                        val isSelected = user.language == lang
-                        Button(
-                            onClick = { onLanguageChange(lang) },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) SkillBridgePrimary else SkillBridgeBg,
-                                contentColor = if (isSelected) SkillBridgeWhite else SkillBridgeText
-                            ),
-                            border = ButtonDefaults.outlinedButtonBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-                        ) {
-                            Text(lang.nativeLabel, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-
-        // 9. STAFF & ADMIN CONSOLE PORTAL (WS-1 RBAC Authorization)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onOpenStaffLogin() },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(imageVector = Icons.Default.AdminPanelSettings, contentDescription = null, tint = SkillBridgePrimaryHover)
-                Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Staff Ops & Admin Portal", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text("Requires authorized staff credentials (RBAC)", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                }
-                Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = SkillBridgeTextMuted)
-            }
-        }
-
-        // REFER & EARN
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showReferralDialog = true },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(imageVector = Icons.Default.CardGiftcard, contentDescription = null, tint = SkillBridgePrimary)
-                Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Refer & Earn ₹200", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text("Invite artisans or clients, earn ₹200 on their first job", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                }
-                Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = SkillBridgeTextMuted)
-            }
-        }
-
-        // HELP CENTER & 24/7 SUPPORT
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showHelpCenterDialog = true },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(imageVector = Icons.Default.SupportAgent, contentDescription = null, tint = SkillBridgePrimary)
-                Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Help Center & 24/7 Support", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text("Create support tickets, dispute resolution & live escalation", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                }
-                Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = SkillBridgeTextMuted)
-            }
-        }
-
-        // DPDP ACT 2023 DATA ERASURE
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showDataErasureDialog = true },
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(imageVector = Icons.Default.DeleteOutline, contentDescription = null, tint = SkillBridgeDanger)
-                Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("DPDP Act 2023 Data Erasure", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text("Request complete erasure of your personal & financial data", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                }
-                Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = SkillBridgeTextMuted)
-            }
-        }
-
-        // 10. FREE LEARNING HUB & MICRO-COURSES
-        Text(
-            text = "Learning Hub (Free Micro-Courses)",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-
-        learningCourses.forEach { course ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(course.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            if (course.isCompleted) {
-                                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Completed", tint = SkillBridgeSuccess, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppLanguage.values().forEach { lang ->
+                            val selected = user.language == lang
+                            Surface(
+                                onClick = { onLanguageChange(lang) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (selected) SkillBridgePrimary else SkillBridgeBg,
+                                border = BorderStroke(1.dp, if (selected) SkillBridgePrimary else SkillBridgeBorder)
+                            ) {
+                                Box(Modifier.padding(vertical = 11.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        lang.nativeLabel,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (selected) Color.White else SkillBridgeText
+                                    )
+                                }
                             }
                         }
-                        Text("${course.durationMin} mins • Badge: ${course.rewardBadge}", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                    }
-
-                    Button(
-                        onClick = { onCompleteCourse(course.id) },
-                        colors = ButtonDefaults.buttonColors(containerColor = if (course.isCompleted) SkillBridgeSuccess else SkillBridgePrimary),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(if (course.isCompleted) "Completed" else "Start Course", fontSize = 11.sp, color = SkillBridgeWhite)
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(80.dp))
+        // Portfolio
+        if (portfolioItems.isNotEmpty()) {
+            SectionHeading("Work portfolio", "Showcase the quality of your work")
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(11.dp)
+            ) {
+                portfolioItems.forEach { item ->
+                    Card(
+                        modifier = Modifier.width(172.dp),
+                        shape = ProfileCardShape,
+                        colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+                        border = BorderStroke(1.dp, SkillBridgeBorder)
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(78.dp)
+                                    .clip(RoundedCornerShape(13.dp))
+                                    .background(SkillBridgeSurfaceMuted),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(item.emoji, fontSize = 34.sp)
+                            }
+                            Text(item.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = SkillBridgeText, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(item.category, fontSize = 11.sp, color = SkillBridgeTextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Learning hub
+        SectionHeading("Learning hub", "Build skills and earn new badges")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ProfileCardShape,
+            colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+            border = BorderStroke(1.dp, SkillBridgeBorder)
+        ) {
+            Column {
+                learningCourses.forEachIndexed { index, course ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(43.dp).clip(RoundedCornerShape(13.dp))
+                                .background(if (course.isCompleted) Color(0xFFEAF8EF) else SkillBridgeSurfaceMuted),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (course.isCompleted) Icons.Default.CheckCircle else Icons.Default.School,
+                                contentDescription = null,
+                                tint = if (course.isCompleted) SkillBridgeSuccess else SkillBridgePrimary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(11.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(course.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = SkillBridgeText, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text("${course.durationMin} min  •  Badge: ${course.rewardBadge}", fontSize = 10.sp, color = SkillBridgeTextMuted)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        if (course.isCompleted) {
+                            Surface(shape = CircleShape, color = Color(0xFFEAF8EF)) {
+                                Text("Done", modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp), color = SkillBridgeSuccess, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            TextButton(onClick = { onCompleteCourse(course.id) }) {
+                                Text("Start", color = SkillBridgePrimary, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    if (index != learningCourses.lastIndex) ProfileDivider()
+                }
+            }
+        }
+        OutlinedButton(
+            onClick = onTakeQuizClick,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.dp, SkillBridgePrimary.copy(alpha = 0.45f)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = SkillBridgePrimaryHover)
+        ) {
+            Icon(Icons.Default.Quiz, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Take a skills quiz", fontWeight = FontWeight.Bold)
+        }
+
+        // Onboarding
+        SectionHeading("Profile setup", "Choose how you want to complete onboarding")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ProfileCardShape,
+            colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+            border = BorderStroke(1.dp, SkillBridgeBorder)
+        ) {
+            Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OnboardingAction(Icons.Default.Mic, "Voice onboarding", "Set up your profile by speaking", onLaunchVoiceOnboarding)
+                OnboardingAction(Icons.Default.Description, "Guided form", "Enter your details step by step", onLaunchFormOnboarding)
+                OnboardingAction(Icons.Default.Dialpad, "IVR onboarding", "Use the assisted phone flow", onLaunchIvrOnboarding)
+            }
+        }
+
+        // Account & support
+        SectionHeading("Account & support", "Manage your workspace and get help")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ProfileCardShape,
+            colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+            border = BorderStroke(1.dp, SkillBridgeBorder)
+        ) {
+            Column {
+                SettingRow(Icons.Default.Business, "Business & team", "Billing, dispatchers and team roles", onClick = onOpenBusinessTeam)
+                ProfileDivider()
+                SettingRow(Icons.Default.AdminPanelSettings, "Staff & admin portal", "Restricted to authorised staff", onClick = onOpenStaffLogin)
+                ProfileDivider()
+                SettingRow(Icons.Default.MonitorHeart, "System diagnostics", "Maps, connectivity and offline sync", onClick = onOpenDiagnostics)
+                ProfileDivider()
+                SettingRow(Icons.Default.CardGiftcard, "Refer & earn ₹200", "Invite customers and service professionals", onClick = { showReferralDialog = true })
+                ProfileDivider()
+                SettingRow(Icons.Default.SupportAgent, "Help centre", "Support, disputes and escalation", onClick = { showHelpCenterDialog = true })
+                ProfileDivider()
+                SettingRow(Icons.Default.DeleteOutline, "Request data erasure", "Privacy and personal data controls", danger = true, onClick = { showDataErasureDialog = true })
+            }
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ProfileCardShape,
+            color = SkillBridgeSurfaceMuted
+        ) {
+            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Security, contentDescription = null, tint = SkillBridgeSuccess, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("Your account, your control", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SkillBridgeText)
+                    Text("Manage trusted contacts, privacy and service preferences here.", fontSize = 10.sp, color = SkillBridgeTextMuted, lineHeight = 15.sp)
+                }
+            }
+        }
+        Spacer(Modifier.height(28.dp))
     }
 
-    // Share QR Dialog
     if (showShareQrDialog) {
         AlertDialog(
             onDismissRequest = { showShareQrDialog = false },
-            title = {
-                Text("Verified Skill Passport QR", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            },
+            title = { Text("Skill Passport", fontWeight = FontWeight.Bold) },
             text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Share this verified QR code with prospective clients or employers.", style = MaterialTheme.typography.bodySmall, color = SkillBridgeTextMuted)
-                    Spacer(modifier = Modifier.height(16.dp))
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Share your profile with customers and employers.", color = SkillBridgeTextMuted)
+                    Spacer(Modifier.height(16.dp))
                     Box(
-                        modifier = Modifier
-                            .size(180.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                        Modifier.size(176.dp).clip(RoundedCornerShape(18.dp))
                             .background(SkillBridgePrimarySoft)
-                            .border(2.dp, SkillBridgePrimary, RoundedCornerShape(12.dp)),
+                            .border(2.dp, SkillBridgePrimary, RoundedCornerShape(18.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(imageVector = Icons.Default.QrCode2, contentDescription = null, tint = SkillBridgePrimaryHover, modifier = Modifier.size(110.dp))
-                            Text("skillbridge.in/p/${user.id}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SkillBridgePrimaryHover)
+                            Icon(Icons.Default.QrCode2, contentDescription = null, tint = SkillBridgePrimaryHover, modifier = Modifier.size(105.dp))
+                            Text("skillbridge.in/p/${user.id}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SkillBridgePrimaryHover)
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text("Govt. KYC Verified • 94% Trust Score", style = MaterialTheme.typography.labelSmall, color = SkillBridgeSuccess, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        if (user.isKycVerified) "KYC verified" else "KYC verification pending",
+                        fontSize = 12.sp,
+                        color = if (user.isKycVerified) SkillBridgeSuccess else SkillBridgeWarning,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = { showShareQrDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimary)
-                ) {
-                    Text("Done", color = SkillBridgeWhite)
+                Button(onClick = { showShareQrDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimary)) {
+                    Text("Done")
                 }
             },
-            containerColor = SkillBridgeBg,
-            shape = RoundedCornerShape(16.dp)
+            containerColor = SkillBridgeWhite,
+            shape = ProfileCardShape
         )
     }
 
-    // Edit Contact Dialog
     if (showEditContactDialog) {
         AlertDialog(
             onDismissRequest = { showEditContactDialog = false },
-            title = { Text("Update Trusted Contact", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
+            title = { Text("Trusted emergency contact", fontWeight = FontWeight.Bold) },
             text = {
-                Column {
-                    Text("Enter emergency contact phone number for automated live alerts:", style = MaterialTheme.typography.bodySmall)
-                    Spacer(modifier = Modifier.height(8.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Enter the phone number that should receive emergency alerts.", fontSize = 13.sp, color = SkillBridgeTextMuted)
                     OutlinedTextField(
                         value = contactInput,
                         onValueChange = { contactInput = it },
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Phone number") }
                     )
                 }
             },
@@ -623,40 +623,143 @@ fun ProfileScreen(
                         showEditContactDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimary)
-                ) {
-                    Text("Save Contact", color = SkillBridgeWhite)
-                }
+                ) { Text("Save contact") }
             },
-            dismissButton = {
-                TextButton(onClick = { showEditContactDialog = false }) { Text("Cancel") }
-            },
-            containerColor = SkillBridgeBg,
-            shape = RoundedCornerShape(16.dp)
+            dismissButton = { TextButton(onClick = { showEditContactDialog = false }) { Text("Cancel") } },
+            containerColor = SkillBridgeWhite,
+            shape = ProfileCardShape
         )
     }
 
     if (showHelpCenterDialog) {
         HelpCenterDialog(
-            onSubmitTicket = { _, _ ->
-                showHelpCenterDialog = false
-            },
+            onSubmitTicket = { _, _ -> showHelpCenterDialog = false },
             onDismiss = { showHelpCenterDialog = false }
         )
     }
-
     if (showReferralDialog) {
         ReferralProgramDialog(
             referralCode = "SKILL${user.phone.takeLast(4).ifEmpty { "2026" }}",
             onDismiss = { showReferralDialog = false }
         )
     }
-
     if (showDataErasureDialog) {
         DataErasureDialog(
-            onConfirmErasure = {
-                showDataErasureDialog = false
-            },
+            onConfirmErasure = { showDataErasureDialog = false },
             onDismiss = { showDataErasureDialog = false }
         )
+    }
+}
+
+@Composable
+private fun ProfileMetric(
+    modifier: Modifier = Modifier,
+    value: String,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    valueColor: Color
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(15.dp),
+        color = SkillBridgeBg,
+        border = BorderStroke(1.dp, SkillBridgeBorder)
+    ) {
+        Column(
+            Modifier.padding(vertical = 11.dp, horizontal = 7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = valueColor, modifier = Modifier.size(17.dp))
+            Text(value, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = valueColor, maxLines = 1)
+            Text(label, fontSize = 9.sp, color = SkillBridgeTextMuted, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun SectionHeading(title: String, subtitle: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = SkillBridgeText)
+        Text(subtitle, fontSize = 11.sp, color = SkillBridgeTextMuted)
+    }
+}
+
+@Composable
+private fun SettingIcon(icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Box(
+        Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(SkillBridgeSurfaceMuted),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = SkillBridgePrimary, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun SettingRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    danger: Boolean = false,
+    onClick: () -> Unit = {},
+    trailing: (@Composable () -> Unit)? = null
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier.size(42.dp).clip(RoundedCornerShape(13.dp))
+                .background(if (danger) SkillBridgeDanger.copy(alpha = 0.09f) else SkillBridgeSurfaceMuted),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = if (danger) SkillBridgeDanger else SkillBridgePrimary, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(11.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (danger) SkillBridgeDanger else SkillBridgeText)
+            Text(subtitle, fontSize = 10.sp, color = SkillBridgeTextMuted, lineHeight = 14.sp)
+        }
+        if (trailing != null) {
+            trailing()
+        } else {
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = SkillBridgeTextMuted, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun ProfileDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 67.dp),
+        color = SkillBridgeBorder.copy(alpha = 0.75f)
+    )
+}
+
+@Composable
+private fun OnboardingAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = ProfileTileShape,
+        color = SkillBridgeBg,
+        border = BorderStroke(1.dp, SkillBridgeBorder)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SettingIcon(icon)
+            Spacer(Modifier.width(11.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = SkillBridgeText)
+                Text(subtitle, fontSize = 10.sp, color = SkillBridgeTextMuted)
+            }
+            Icon(Icons.Default.ArrowForward, contentDescription = null, tint = SkillBridgePrimary, modifier = Modifier.size(18.dp))
+        }
     }
 }

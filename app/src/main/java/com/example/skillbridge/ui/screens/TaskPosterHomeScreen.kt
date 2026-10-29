@@ -1,36 +1,32 @@
 package com.example.skillbridge.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.skillbridge.model.*
 import com.example.skillbridge.ui.theme.*
+
+private val HomeCardShape = RoundedCornerShape(22.dp)
+private val HomeTileShape = RoundedCornerShape(17.dp)
 
 @Composable
 fun TaskPosterHomeScreen(
@@ -45,197 +41,68 @@ fun TaskPosterHomeScreen(
     onVoiceAssistClick: () -> Unit,
     onBookAgainClick: (User) -> Unit
 ) {
-    val activeLiveJob = activeJobs.firstOrNull { it.status !in listOf(JobStatus.COMPLETED, JobStatus.CANCELLED) }
+    val activeLiveJob = activeJobs.firstOrNull {
+        it.status !in listOf(JobStatus.COMPLETED, JobStatus.CANCELLED)
+    }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(SkillBridgeBg)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 90.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxSize().background(SkillBridgeBg),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 110.dp),
+        verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
-        // 1. PINNED ACTIVE JOB CARD (if any live job is active)
+        item {
+            HomeGreetingHeader(city = selectedCity, onVoiceAssistClick = onVoiceAssistClick)
+        }
+
+        item {
+            SearchPrompt(onClick = onRequestNowClick)
+        }
+
         if (activeLiveJob != null) {
             item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
-                        .clickable { onTrackJobClick(activeLiveJob) }
-                        .testTag("pinned_active_job_card"),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-                    border = CardDefaults.outlinedCardBorder().copy(width = 1.5.dp, brush = androidx.compose.ui.graphics.SolidColor(SkillBridgePrimary))
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .clip(CircleShape)
-                                        .background(SkillBridgePrimary)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "LIVE ORDER IN PROGRESS",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = SkillBridgePrimaryHover,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Text(
-                                text = "ETA ~${activeLiveJob.etaMinutes} mins",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = SkillBridgePrimaryHover
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = activeLiveJob.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Assigned: ${activeLiveJob.workerName ?: "Matching nearby worker..."} • Status: ${activeLiveJob.status.name.replace("_", " ")}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SkillBridgeTextMuted
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Button(
-                            onClick = { onTrackJobClick(activeLiveJob) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(42.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimary)
-                        ) {
-                            Icon(imageVector = Icons.Default.DirectionsCar, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Track Live & View Map", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
+                ActiveJobCard(job = activeLiveJob, onClick = { onTrackJobClick(activeLiveJob) })
             }
         }
 
-        // 2. HERO CALL TO ACTION BANNERS
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Urgent on-demand service (3 Taps)
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(120.dp)
-                        .clickable { onRequestNowClick() }
-                        .testTag("request_service_banner"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = SkillBridgePrimarySoft),
-                    border = CardDefaults.outlinedCardBorder().copy(width = 1.dp, brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(SkillBridgePrimary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(imageVector = Icons.Default.FlashOn, contentDescription = null, tint = SkillBridgeWhite, modifier = Modifier.size(20.dp))
-                        }
-                        Column {
-                            Text("Need Service Now?", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = SkillBridgePrimaryHover)
-                            Text("Electrician, Cook, Driver in 20m", style = MaterialTheme.typography.bodySmall, fontSize = 11.sp, color = SkillBridgeTextMuted)
-                        }
-                    }
-                }
-
-                // Post skilled project
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(120.dp)
-                        .clickable { onPostProjectClick() }
-                        .testTag("post_project_banner"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-                    border = CardDefaults.outlinedCardBorder().copy(width = 1.dp, brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(SkillBridgePrimaryHover),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(imageVector = Icons.Default.EditCalendar, contentDescription = null, tint = SkillBridgeWhite, modifier = Modifier.size(18.dp))
-                        }
-                        Column {
-                            Text("Post a Project", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = SkillBridgePrimaryHover)
-                            Text("Dev, Design, Tutors & Jobs", style = MaterialTheme.typography.bodySmall, fontSize = 11.sp, color = SkillBridgeTextMuted)
-                        }
-                    }
-                }
-            }
-        }
-
-        // 3. EXPLORE CATEGORIES (Section 12: Category Grid with rounded icon tiles on surface-muted)
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Explore Work Categories",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                ActionCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Book a service",
+                    description = "Get trusted help nearby",
+                    icon = Icons.Default.Bolt,
+                    accent = SkillBridgePrimary,
+                    container = SkillBridgePrimarySoft,
+                    tag = "request_service_banner",
+                    onClick = onRequestNowClick
                 )
-                Text(
-                    text = "${categories.size} Available",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = SkillBridgePrimaryHover,
-                    fontWeight = FontWeight.SemiBold
+                ActionCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Post a project",
+                    description = "Find the right expertise",
+                    icon = Icons.Default.EditNote,
+                    accent = SkillBridgePrimaryHover,
+                    container = SkillBridgeSurfaceMuted,
+                    tag = "post_project_banner",
+                    onClick = onPostProjectClick
                 )
             }
         }
 
-        // Grid of Categories (2 columns or 4x4)
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            SectionTitle(
+                title = "Explore categories",
+                subtitle = "Find the right person for the job",
+                trailing = "${categories.size} services"
+            )
+        }
+
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                 categories.chunked(2).forEach { rowCategories ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(11.dp)
                     ) {
                         rowCategories.forEach { category ->
                             CategoryCard(
@@ -244,79 +111,245 @@ fun TaskPosterHomeScreen(
                                 onClick = { onCategoryClick(category) }
                             )
                         }
-                        if (rowCategories.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
+                        if (rowCategories.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        item {
+            SectionTitle(
+                title = "Your trusted professionals",
+                subtitle = "Book again or discover local talent",
+                trailing = if (workersPool.isNotEmpty()) "${workersPool.size} nearby" else null
+            )
+        }
+
+        if (workersPool.isNotEmpty()) {
+            item {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(13.dp),
+                    contentPadding = PaddingValues(vertical = 2.dp)
+                ) {
+                    items(workersPool) { worker ->
+                        WorkerSpotlightCard(worker = worker, onBookClick = { onBookAgainClick(worker) })
+                    }
+                }
+            }
+        } else {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = SkillBridgeSurfaceMuted,
+                    shape = HomeCardShape,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgeBorder)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HomeIconTile(icon = Icons.Default.Groups, tint = SkillBridgePrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Your next favourite professional", fontWeight = FontWeight.Bold, color = SkillBridgeText)
+                            Text("Available professionals will appear here.", fontSize = 12.sp, color = SkillBridgeTextMuted)
                         }
                     }
                 }
             }
         }
 
-        // 4. "BOOK AGAIN" / TRUSTED VERIFIED WORKERS
-        item {
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Book Again & Top Rated",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Verified KYC",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = SkillBridgeSuccess,
-                    fontWeight = FontWeight.Bold
-                )
+        item { TrustAndSafetyCard() }
+    }
+}
+
+@Composable
+private fun HomeGreetingHeader(city: String, onVoiceAssistClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = SkillBridgePrimary, modifier = Modifier.size(16.dp))
+                Text(city.ifBlank { "Choose your location" }, fontSize = 12.sp, color = SkillBridgeTextMuted, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.Default.ExpandMore, contentDescription = null, tint = SkillBridgeTextMuted, modifier = Modifier.size(16.dp))
+            }
+            Text(
+                "What do you need\na hand with?",
+                fontSize = 28.sp,
+                lineHeight = 33.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = SkillBridgeText
+            )
+            Text("Reliable local help, made simple.", fontSize = 13.sp, color = SkillBridgeTextMuted)
+        }
+        Surface(
+            modifier = Modifier.size(54.dp).clickable(onClick = onVoiceAssistClick).testTag("btn_voice_assist"),
+            shape = RoundedCornerShape(18.dp),
+            color = SkillBridgePrimarySoft,
+            border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgeBorder)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Mic, contentDescription = "Voice assistant", tint = SkillBridgePrimary, modifier = Modifier.size(25.dp))
             }
         }
+    }
+}
 
-        item {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                items(workersPool) { worker ->
-                    WorkerSpotlightCard(
-                        worker = worker,
-                        onBookClick = { onBookAgainClick(worker) }
-                    )
-                }
+@Composable
+private fun SearchPrompt(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("home_search_prompt"),
+        shape = RoundedCornerShape(17.dp),
+        color = SkillBridgeWhite,
+        border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgeBorder),
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Search, contentDescription = null, tint = SkillBridgePrimary, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(11.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Search services or professionals", fontSize = 13.sp, color = SkillBridgeText, fontWeight = FontWeight.SemiBold)
+                Text("e.g. electrician, tutor, designer", fontSize = 11.sp, color = SkillBridgeTextMuted)
             }
+            Icon(Icons.Default.Tune, contentDescription = null, tint = SkillBridgeTextMuted, modifier = Modifier.size(19.dp))
         }
+    }
+}
 
-        // 5. PLATFORM PROMISE CARD (Safety, Escrow, Masked Calling)
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(imageVector = Icons.Default.Shield, contentDescription = null, tint = SkillBridgeSuccess, modifier = Modifier.size(36.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "SkillBridge Escrow Protection",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Payment is safely held in escrow and released ONLY after you confirm complete satisfaction with photo proof.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SkillBridgeTextMuted
-                        )
+@Composable
+private fun ActiveJobCard(job: Job, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("pinned_active_job_card"),
+        shape = HomeCardShape,
+        colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+        border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgePrimary.copy(alpha = 0.45f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.background(
+                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    listOf(SkillBridgePrimarySoft.copy(alpha = 0.75f), SkillBridgeWhite)
+                )
+            ).padding(17.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(9.dp), color = SkillBridgePrimary) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Box(Modifier.size(6.dp).clip(CircleShape).background(Color.White))
+                        Text("IN PROGRESS", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, letterSpacing = 0.5.sp)
                     }
                 }
+                Spacer(Modifier.weight(1f))
+                Icon(Icons.Default.Schedule, contentDescription = null, tint = SkillBridgePrimary, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("~${job.etaMinutes} min ETA", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SkillBridgePrimaryHover)
+            }
+            Text(job.title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = SkillBridgeText, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = SkillBridgeTextMuted, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    job.workerName ?: "Matching with a nearby professional",
+                    fontSize = 12.sp,
+                    color = SkillBridgeTextMuted,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Button(
+                onClick = onClick,
+                modifier = Modifier.fillMaxWidth().height(46.dp),
+                shape = RoundedCornerShape(13.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimary)
+            ) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Track your service", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun ActionCard(
+    modifier: Modifier,
+    title: String,
+    description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accent: Color,
+    container: Color,
+    tag: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.height(156.dp).clickable(onClick = onClick).testTag(tag),
+        shape = HomeCardShape,
+        colors = CardDefaults.cardColors(containerColor = container),
+        border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgeBorder)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(15.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                HomeIconTile(icon = icon, tint = Color.White, background = accent, size = 42)
+                Spacer(Modifier.weight(1f))
+                Icon(Icons.Default.ArrowOutward, contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = accent, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(description, fontSize = 11.sp, lineHeight = 15.sp, color = SkillBridgeTextMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(title: String, subtitle: String, trailing: String? = null) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = SkillBridgeText)
+            Text(subtitle, fontSize = 12.sp, color = SkillBridgeTextMuted)
+        }
+        if (trailing != null) {
+            Surface(shape = RoundedCornerShape(9.dp), color = SkillBridgePrimarySoft) {
+                Text(
+                    trailing,
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                    fontSize = 10.sp,
+                    color = SkillBridgePrimaryHover,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeIconTile(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    background: Color = tint.copy(alpha = 0.12f),
+    size: Int = 42
+) {
+    Box(
+        modifier = Modifier.size(size.dp).clip(RoundedCornerShape(14.dp)).background(background),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size((size * 0.52f).dp))
     }
 }
 
@@ -326,160 +359,141 @@ fun CategoryCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .testTag("category_card_${category.id}"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = SkillBridgeSurfaceMuted),
-        border = CardDefaults.outlinedCardBorder().copy(width = 1.dp, brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
+    Surface(
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).testTag("category_card_${category.id}"),
+        shape = HomeTileShape,
+        color = SkillBridgeWhite,
+        border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgeBorder)
     ) {
         Row(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(SkillBridgePrimarySoft),
-                contentAlignment = Alignment.Center
-            ) {
-                val icon = when (category.iconKey) {
-                    "bolt" -> Icons.Default.Bolt
-                    "plumbing" -> Icons.Default.Plumbing
-                    "restaurant" -> Icons.Default.Restaurant
-                    "cleaning_services" -> Icons.Default.CleaningServices
-                    "drive_eta" -> Icons.Default.DirectionsCar
-                    "format_paint" -> Icons.Default.FormatPaint
-                    "content_cut" -> Icons.Default.ContentCut
-                    "build" -> Icons.Default.Build
-                    "foundation" -> Icons.Default.Foundation
-                    "local_shipping" -> Icons.Default.LocalShipping
-                    "code" -> Icons.Default.Code
-                    "brush" -> Icons.Default.Brush
-                    "school" -> Icons.Default.School
-                    else -> Icons.Default.Work
-                }
-                Icon(
-                    imageVector = icon,
-                    contentDescription = category.name,
-                    tint = SkillBridgePrimary,
-                    modifier = Modifier.size(20.dp)
-                )
+            val icon = when (category.iconKey) {
+                "bolt" -> Icons.Default.Bolt
+                "plumbing" -> Icons.Default.Plumbing
+                "restaurant" -> Icons.Default.Restaurant
+                "cleaning_services" -> Icons.Default.CleaningServices
+                "drive_eta" -> Icons.Default.DirectionsCar
+                "format_paint" -> Icons.Default.FormatPaint
+                "content_cut" -> Icons.Default.ContentCut
+                "build" -> Icons.Default.Build
+                "foundation" -> Icons.Default.Foundation
+                "local_shipping" -> Icons.Default.LocalShipping
+                "code" -> Icons.Default.Code
+                "brush" -> Icons.Default.Brush
+                "school" -> Icons.Default.School
+                else -> Icons.Default.Work
             }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Column {
+            HomeIconTile(icon = icon, tint = SkillBridgePrimary, background = SkillBridgePrimarySoft, size = 42)
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = category.name,
-                        style = MaterialTheme.typography.titleSmall,
+                        category.name,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = SkillBridgeText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     if (category.isHotspot) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(SkillBridgePrimarySoft)
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
-                        ) {
-                            Text("Hot", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = SkillBridgePrimaryHover)
+                        Spacer(Modifier.width(4.dp))
+                        Surface(shape = RoundedCornerShape(5.dp), color = SkillBridgePrimarySoft) {
+                            Text("HOT", modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp), fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, color = SkillBridgePrimaryHover)
                         }
                     }
                 }
                 Text(
-                    text = "${category.nameHi} • From ₹${category.basePrice}",
-                    style = MaterialTheme.typography.bodySmall,
+                    "From ₹${category.basePrice}",
                     fontSize = 11.sp,
-                    color = SkillBridgeTextMuted
+                    color = SkillBridgePrimaryHover,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
                 )
+                Text(category.nameHi, fontSize = 10.sp, color = SkillBridgeTextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
 }
 
 @Composable
-fun WorkerSpotlightCard(
-    worker: User,
-    onBookClick: () -> Unit
-) {
+fun WorkerSpotlightCard(worker: User, onBookClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .width(190.dp)
-            .shadow(elevation = 2.dp, shape = RoundedCornerShape(14.dp)),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = SkillBridgeBg),
-        border = CardDefaults.outlinedCardBorder().copy(width = 1.dp, brush = androidx.compose.ui.graphics.SolidColor(SkillBridgeBorder))
+        modifier = Modifier.width(204.dp),
+        shape = HomeCardShape,
+        colors = CardDefaults.cardColors(containerColor = SkillBridgeWhite),
+        border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgeBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = worker.avatarEmoji,
-                    fontSize = 28.sp
-                )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(SkillBridgeSuccess.copy(alpha = 0.12f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
+        Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(16.dp), color = SkillBridgeSurfaceMuted) {
+                    Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
+                        Text(worker.avatarEmoji, fontSize = 30.sp)
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                Surface(shape = RoundedCornerShape(9.dp), color = SkillBridgeSuccess.copy(alpha = 0.10f)) {
                     Text(
-                        text = "${worker.trustScore}% Trust",
+                        "${worker.trustScore}% trust",
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = SkillBridgeSuccess
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = worker.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1
-            )
-
-            Text(
-                text = "⭐ ${worker.rating} (${worker.reviewCount}) • ${worker.jobsCompleted} jobs",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 11.sp,
-                color = SkillBridgeTextMuted
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "📍 ${worker.locationArea}, ${worker.locationCity}",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.sp,
-                color = SkillBridgeTextMuted
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
+            Text(worker.name, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = SkillBridgeText, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(14.dp))
+                Text("${worker.rating}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SkillBridgeText)
+                Text("(${worker.reviewCount}) · ${worker.jobsCompleted} jobs", fontSize = 10.sp, color = SkillBridgeTextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = SkillBridgeTextMuted, modifier = Modifier.size(14.dp))
+                Text(
+                    "${worker.locationArea}, ${worker.locationCity}",
+                    fontSize = 10.sp,
+                    color = SkillBridgeTextMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             Button(
                 onClick = onBookClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(34.dp),
-                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().height(40.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = SkillBridgePrimary),
-                contentPadding = PaddingValues(0.dp)
+                contentPadding = PaddingValues(horizontal = 10.dp)
             ) {
-                Text("Hire Worker", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Book professional", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(5.dp))
+                Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(14.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrustAndSafetyCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = HomeCardShape,
+        color = SkillBridgeSurfaceMuted,
+        border = androidx.compose.foundation.BorderStroke(1.dp, SkillBridgeBorder)
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+            HomeIconTile(icon = Icons.Default.Shield, tint = SkillBridgeSuccess, background = SkillBridgeSuccess.copy(alpha = 0.12f), size = 46)
+            Spacer(Modifier.width(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Your safety comes first", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = SkillBridgeText)
+                Text(
+                    "SkillBridge is designed around trusted professionals and safer bookings. Review the service details before confirming.",
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp,
+                    color = SkillBridgeTextMuted
+                )
             }
         }
     }

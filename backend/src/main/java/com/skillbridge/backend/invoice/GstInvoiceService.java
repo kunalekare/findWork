@@ -18,6 +18,7 @@ public class GstInvoiceService {
     private final String gstin;
     private final String sacCode;
     private final double gstRatePercent;
+    private final boolean isProduction;
 
     public record ServerGstInvoice(
         String invoiceNumber,
@@ -37,13 +38,19 @@ public class GstInvoiceService {
     ) {}
 
     public GstInvoiceService(
-        @Value("${gst.invoice.gstin:27AABCS1423Q1ZP}") String gstin,
-        @Value("${gst.invoice.sac-code:998713}") String sacCode,
-        @Value("${gst.rate.percent:18.0}") double gstRatePercent
+        @Value("${gst.invoice.gstin:GSTIN-NOT-CONFIGURED-PILOT-ONLY}") String gstin,
+        @Value("${gst.invoice.sac-code:SAC-NOT-CONFIGURED}") String sacCode,
+        @Value("${gst.rate.percent:18.0}") double gstRatePercent,
+        @Value("${app.is-production:false}") boolean isProduction
     ) {
         this.gstin = gstin;
         this.sacCode = sacCode;
         this.gstRatePercent = gstRatePercent;
+        this.isProduction = isProduction;
+    }
+
+    public GstInvoiceService(String gstin, String sacCode, double gstRatePercent) {
+        this(gstin, sacCode, gstRatePercent, false);
     }
 
     public ServerGstInvoice generateInvoice(
@@ -53,6 +60,10 @@ public class GstInvoiceService {
         String workerName,
         String taskPosterName
     ) {
+        if (isProduction && (gstin.contains("NOT-CONFIGURED") || sacCode.contains("NOT-CONFIGURED"))) {
+            throw new IllegalStateException("GST invoice generation blocked: valid corporate GSTIN and SAC required in production profile");
+        }
+
         // 18% inclusive GST calculation: Base = Total / (1 + Rate/100)
         double rateFactor = 1.0 + (gstRatePercent / 100.0);
         long baseAmountPaise = (long) (totalPaise / rateFactor);
@@ -76,8 +87,8 @@ public class GstInvoiceService {
             totalPaise,
             workerName,
             taskPosterName,
-            true, // Test mode placeholder flag
-            "NOTICE: SAC code (" + sacCode + ") and GSTIN (" + gstin + ") are TEST-MODE PLACEHOLDERS to be replaced with the registered business's real credentials prior to official launch."
+            gstin.contains("NOT-CONFIGURED"), // Test mode placeholder flag
+            "PILOT NOTICE: SAC code (" + sacCode + ") and GSTIN (" + gstin + ") are TEST-MODE PLACEHOLDERS. Valid corporate registration required before commercial release."
         );
     }
 }

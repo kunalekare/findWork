@@ -44,6 +44,7 @@ public class JwtService {
 
     public String generateRefreshToken(String userId) {
         return Jwts.builder()
+            .id(java.util.UUID.randomUUID().toString())
             .subject(userId)
             .claim("tokenType", "REFRESH")
             .issuedAt(new Date())

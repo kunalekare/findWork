@@ -51,4 +51,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+
+app:
+  is-production: ${APP_IS_PRODUCTION:false}
+
+gst:
+  invoice:
+    gstin: ${GST_INVOICE_GSTIN:GSTIN-NOT-CONFIGURED-PILOT-ONLY}
+    sac-code: ${GST_INVOICE_SAC_CODE:SAC-NOT-CONFIGURED}
+  rate:
+    percent: ${GST_RATE_PERCENT:18.0}
+

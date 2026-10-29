@@ -21,7 +21,7 @@ public class LedgerAndPaymentTest {
     void setUp() {
         ledgerService = new LedgerService();
         razorpayService = new RazorpayService("rzp_test_mock", "mock_secret", "mock_webhook_secret");
-        gstInvoiceService = new GstInvoiceService("27AABCS1423Q1ZP", "998713", 18.0);
+        gstInvoiceService = new GstInvoiceService("GSTIN-NOT-CONFIGURED-PILOT-ONLY", "SAC-NOT-CONFIGURED", 18.0, false);
     }
 
     @Test
@@ -84,8 +84,18 @@ public class LedgerAndPaymentTest {
 
         assertTrue(invoice.isPlaceholderMode());
         assertTrue(invoice.complianceDisclaimer().contains("TEST-MODE PLACEHOLDERS"));
-        assertEquals("998713", invoice.sacCode());
-        assertEquals("27AABCS1423Q1ZP", invoice.gstin());
+        assertEquals("SAC-NOT-CONFIGURED", invoice.sacCode());
+        assertEquals("GSTIN-NOT-CONFIGURED-PILOT-ONLY", invoice.gstin());
         assertEquals(85000L, invoice.totalAmountPaise());
+    }
+
+    @Test
+    @DisplayName("GST invoice generation is blocked in production if GSTIN or SAC is not configured")
+    void testProductionGstInvoiceBlocked() {
+        GstInvoiceService prodGstService = new GstInvoiceService("GSTIN-NOT-CONFIGURED-PILOT-ONLY", "SAC-NOT-CONFIGURED", 18.0, true);
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
+            prodGstService.generateInvoice("job_302", "Painting", 50000L, "Worker A", "Poster B");
+        });
+        assertTrue(ex.getMessage().contains("GST invoice generation blocked"));
     }
 }

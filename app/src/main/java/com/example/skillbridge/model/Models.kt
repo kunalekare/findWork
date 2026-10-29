@@ -220,8 +220,8 @@ data class GstInvoice(
     val invoiceNumber: String,
     val date: String,
     val jobTitle: String,
-    val gstin: String = "27AABCS1423Q1ZP",
-    val sacCode: String = "998713",
+    val gstin: String = "GSTIN-NOT-CONFIGURED-PILOT-ONLY",
+    val sacCode: String = "SAC-NOT-CONFIGURED",
     val baseAmountPaise: Long,
     val cgstPaise: Long,
     val sgstPaise: Long,
@@ -229,7 +229,7 @@ data class GstInvoice(
     val workerName: String,
     val taskPosterName: String,
     val isPlaceholderMode: Boolean = true,
-    val complianceDisclaimer: String = "TEST-MODE PLACEHOLDER: To be replaced with registered business's real GSTIN & SAC code before official launch"
+    val complianceDisclaimer: String = "PILOT WARNING: GSTIN and SAC are unconfigured placeholders (GSTIN-NOT-CONFIGURED-PILOT-ONLY / SAC-NOT-CONFIGURED). Valid corporate registration required before commercial release."
 )
 
 data class PortfolioItem(

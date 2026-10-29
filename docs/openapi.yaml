@@ -1,0 +1,328 @@
+openapi: 3.0.3
+info:
+  title: SkillBridge Marketplace API
+  description: |
+    Production-grade, two-sided, real-time work marketplace connecting workers and employers across India.
+    Enforces double-entry ledger in integer paise, PostGIS geo-dispatch, and consent-first applications.
+  version: 1.0.0
+  contact:
+    name: SkillBridge Engineering
+    email: engineering@skillbridge.in
+
+servers:
+  - url: https://api.skillbridge.in/v1
+    description: Production Gateway
+  - url: http://localhost:8080/v1
+    description: Local Docker Development
+
+paths:
+  /categories:
+    get:
+      summary: List all active categories
+      description: Returns 14 blue-collar & skilled categories with localized names and base price in paise.
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+
+  /jobs/request-local:
+    post:
+      summary: Create on-demand local job request with escrow hold
+      description: Requires an Idempotency-Key. Holds the budget amount in platform escrow and triggers radius cascade.
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique client key to guarantee idempotent financial escrow reservation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalJobRequest'
+      responses:
+        '200':
+          description: Job created and escrow hold recorded in double-entry ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          description: Idempotent duplicate or invalid state transition
+          $ref: '#/components/responses/ErrorResponse'
+
+  /jobs/{id}/accept:
+    post:
+      summary: Worker claims dispatch cascade lock
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: workerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job accepted and assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+
+  /jobs/{id}/advance-status:
+    post:
+      summary: Advance job lifecycle state machine
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetStatus]
+              properties:
+                targetStatus:
+                  type: string
+                  enum: [MATCHED, EN_ROUTE, ARRIVED, IN_PROGRESS, COMPLETED, DISPUTED, CANCELLED]
+                photoProofUrl:
+                  type: string
+      responses:
+        '200':
+          description: Status advanced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /jobs/{id}/release-escrow:
+    post:
+      summary: Release escrow and credit worker wallet
+      description: Atomically balances double-entry ledger and generates GST tax invoice.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating:
+                  type: number
+                  minimum: 1.0
+                  maximum: 5.0
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Escrow ledger settled and GST invoice generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscrowSettlementResponse'
+
+  /wallet/withdraw-upi:
+    post:
+      summary: Instant UPI payout from worker wallet
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vpa, amountPaise]
+              properties:
+                vpa:
+                  type: string
+                  example: "ramesh@okaxis"
+                amountPaise:
+                  type: integer
+                  minimum: 10000
+      responses:
+        '200':
+          description: Payout triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutResponse'
+
+components:
+  schemas:
+    CategoryListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        correlationId:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              nameEn:
+                type: string
+              nameHi:
+                type: string
+              nameMr:
+                type: string
+              workType:
+                type: string
+              basePricePaise:
+                type: integer
+
+    LocalJobRequest:
+      type: object
+      required: [categoryId, problemDescription, urgency, address, city, budgetPaise]
+      properties:
+        categoryId:
+          type: string
+        problemDescription:
+          type: string
+        urgency:
+          type: string
+          enum: [IMMEDIATE, TODAY, SCHEDULED]
+        address:
+          type: string
+        city:
+          type: string
+        budgetPaise:
+          type: integer
+          minimum: 10000
+
+    JobResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        correlationId:
+          type: string
+        data:
+          type: object
+          properties:
+            jobId:
+              type: string
+            status:
+              type: string
+            escrowHeld:
+              type: boolean
+            budgetPaise:
+              type: integer
+            matchExplanation:
+              type: string
+
+    EscrowSettlementResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        correlationId:
+          type: string
+        data:
+          type: object
+          properties:
+            jobId:
+              type: string
+            status:
+              type: string
+            escrowReleased:
+              type: boolean
+            debitEscrowLiabilityPaise:
+              type: integer
+            creditPlatformCommissionPaise:
+              type: integer
+            creditWorkerWalletPaise:
+              type: integer
+            invoiceNumber:
+              type: string
+
+    PayoutResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        correlationId:
+          type: string
+        data:
+          type: object
+          properties:
+            transactionId:
+              type: string
+            amountPaise:
+              type: integer
+            status:
+              type: string
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        correlationId:
+          type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  issue:
+                    type: string
+            timestamp:
+              type: string
+
+  responses:
+    ErrorResponse:
+      description: Standard API Error Envelope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'

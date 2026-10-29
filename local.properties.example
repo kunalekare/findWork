@@ -1,0 +1,5 @@
+# Local Properties Example for SkillBridge
+# Copy to local.properties if developing locally with Android Studio:
+#
+# MAPS_API_KEY: Restricted to package name `in.skillbridge.app` and your SHA-1 signing fingerprint
+MAPS_API_KEY=AIzaSyPlaceholderAndroidMapsApiKey

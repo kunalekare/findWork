@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">SkillBridge</string>
+    <string name="tagline">Work &amp; Services Marketplace</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_orders">Orders</string>
+    <string name="tab_voice">Voice</string>
+    <string name="tab_wallet">Wallet</string>
+    <string name="tab_profile">Profile</string>
+    <string name="mode_hire">Hire</string>
+    <string name="mode_earn">Earn</string>
+    <string name="role_admin">Admin</string>
+    <string name="sos_label">SOS</string>
+    <string name="search_placeholder">Search \'Electrician\', \'Plumber\', \'Cook\'...</string>
+    <string name="online_ready">Ready for Immediate Jobs</string>
+    <string name="offline_status">You are Offline</string>
+    <string name="escrow_protected">100% Escrow Protected</string>
+    <string name="request_now">Request Service Now</string>
+    <string name="post_project">Post a Project</string>
+    <string name="trust_score">Trust Score</string>
+    <string name="skill_passport">Skill Passport</string>
+    <string name="accept_now">Accept Now</string>
+    <string name="decline">Decline</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="withdraw_upi">Withdraw to UPI</string>
+    <string name="low_data_mode">Low Data Mode</string>
+    <string name="report_user">Report User</string>
+    <string name="block_user">Block from Dispatch</string>
+    <string name="worker_pro">SkillBridge Worker Pro</string>
+    <string name="gst_invoice">GST Tax Invoice</string>
+</resources>

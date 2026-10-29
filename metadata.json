@@ -1,0 +1,6 @@
+{
+  "name": "SkillBridge",
+  "description": "Two-sided real-time work marketplace connecting workers and employers for on-demand local services and skilled projects with voice accessibility.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

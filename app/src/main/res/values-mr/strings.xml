@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SkillBridge</string>
+    <string name="tagline">काम आणि सेवांचे व्यासपीठ</string>
+    <string name="tab_home">मुख्य</string>
+    <string name="tab_orders">ऑर्डर्स</string>
+    <string name="tab_voice">आवाज</string>
+    <string name="tab_wallet">वॉलेट</string>
+    <string name="tab_profile">प्रोफाईल</string>
+    <string name="mode_hire">काम द्या</string>
+    <string name="mode_earn">कमावा</string>
+    <string name="role_admin">प्रशासक</string>
+    <string name="sos_label">आपत्कालीन</string>
+    <string name="search_placeholder">\'इलेक्ट्रिशियन\', \'प्लंबर\', \'कुक\' शोधा...</string>
+    <string name="online_ready">त्वरित कामासाठी उपलब्ध</string>
+    <string name="offline_status">तुम्ही ऑफलाइन आहात</string>
+    <string name="escrow_protected">100% एस्क्रो सुरक्षित</string>
+    <string name="request_now">आताच काम बोलवा</string>
+    <string name="post_project">प्रकल्प पोस्ट करा</string>
+    <string name="trust_score">विश्वास गुणांक</string>
+    <string name="skill_passport">कौशल्य पासपोर्ट</string>
+    <string name="accept_now">स्वीकारा</string>
+    <string name="decline">नाकारा</string>
+    <string name="cancel">रद्द करा</string>
+    <string name="confirm">निश्चित करा</string>
+    <string name="withdraw_upi">UPI द्वारे काढा</string>
+    <string name="low_data_mode">कमी डेटा मोड</string>
+    <string name="report_user">तक्रार नोंदवा</string>
+    <string name="block_user">ब्लॉक करा</string>
+    <string name="worker_pro">स्किलब्रिज वर्कर प्रो</string>
+    <string name="gst_invoice">GST टॅक्स इनव्हॉइस</string>
+</resources>
